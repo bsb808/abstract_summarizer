@@ -1,6 +1,6 @@
 # ChatGPT to generate a succinct summary of research abstracts.
 
-Code example to go along with blog post: [ChatGPT to Summarize Research Abstracts](https://mearpub.com/ai-escapades/2023/05/26/chatgpt-to-summarize-research-abstracts/)
+Use the OpenAI API for ChatGPT to summarize, suggest applications and organize a collection of research abstracts.  Builds uppon OpenAI's [quickstart](https://platform.openai.com/docs/quickstart)
 
 ## Run the example
 
@@ -20,7 +20,7 @@ Install Python dependency
 3. Navigate into the project directory:
 
    ```bash
-   cd ai-escapades/summary
+   cd abstract_summarizer
    ```
 
 4. Create a new virtual environment:
@@ -47,5 +47,7 @@ Install Python dependency
 8. Execute the script
 
    ```bash
-   ./summary.py
+   ./summarizer.py
    ```
+
+which should generate `summary.md`.
