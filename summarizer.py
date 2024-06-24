@@ -30,6 +30,7 @@ def cat_prompt(categories, ab_str):
     Given a list of categories as strings and the abstract string,
     return the prompt to request categorization of the abstract.
     '''
+
     preamble = """Below is a set of categories and a one paragraph research abstract.  Select the one best category to fit the following paragraph.
 
 """
@@ -37,6 +38,18 @@ def cat_prompt(categories, ab_str):
         preamble += c + '\n'
     
     return preamble + '\nParagraph:\n' +ab_str
+
+def cat_prompt2(categories, title,  ab_str):
+    '''
+    Given a list of categories as strings and the abstract string,
+    return the prompt to request categorization of the abstract.
+    '''
+
+    preamble = ('Here is a research project described by a title and abstract: \n\n Title: %s \n Abstract: %s \n And here is a list of categories: \n'%(title,ab_str))
+    for c in categories:
+        preamble += c + '\n'
+    
+    return preamble + 'Select the one category that best fits the research project.'
 
 
 def ensure_newline(text):
@@ -115,6 +128,31 @@ ssumm = ''
 for record in records:
     ssumm += record.summary
 
+
+# Create a list of titles and summaries
+sssumm = ''
+for record, ii in zip(records,range(len(records))):
+    sssumm += "*  Title: %s  \n Summary: %s \n\n"%(ii,record.title, record.summary)
+
+# Generate some categories
+prompt = ("Here is a list of research thesis titles and summaries: \n\n %s \n\n Provide a list of 5 naval-relevant research categories to summarize these research areas "% sssumm)
+
+rcats = openai.Completion.create(model = model,
+                                prompt = prompt,
+                                max_tokens = 100,
+                                temperature=0.3)
+cats = rcats.choices[0].text.strip().split('\n')
+
+# Re-categorize
+for ii in range(len(records)):
+    pcat = cat_prompt2(cats, records[ii].title, records[ii].abstract)
+    rcat = openai.Completion.create(model = model,
+                                     prompt = pcat,
+                                     max_tokens = 200,
+                                     temperature=0.6)
+    records[ii].category = rcat.choices[0].text.strip()
+
+
 prompt = 'Summarize the engineering topics described in the text below.  The summary should be a list of the five most important technology categories.  The list should be in markdown list format: \n\n' + ssumm 
 
 rsumm= openai.Completion.create(model = model,
@@ -133,15 +171,23 @@ Generated summary of %d abstracts with the ``%s`` model on %s. \n"""%(len(record
 
 f.write("\nEach abstract is summarized by a single sentence and two potential defense applications.\n")
 
-f.write("Overall synopsis of top categories this quarter.\n")
-f.write(rsumm.choices[0].text + '\n')
+f.write("The research can be summarized in the following categories:\n")
+for c in cats:
+    f.write(c)
+    # Count the nubmer in this category
+    cnt = 0
+    for record in records:
+        if record.category.find(c[3:]) >= 0:
+            cnt += 1
+    f.write(' [%d of %d]'%(cnt,len(records)))
+    f.write('\n')
 
 # Write the summaries for each category
-for c in categories:
+for c in cats:
     f.write("\n\n## " + c + "\n")
     cnt = 0
     for record in records:
-        if record.category.find(c) > 0:
+        if record.category.find(c[3:]) >= 0:
             f.write("\n\n### " + ensure_newline(record.name) + "\n")
             f.write("Title: %s"%ensure_newline(record.title))
             f.write(ensure_newline(record.summary))
@@ -151,3 +197,4 @@ for c in categories:
         f.write('\n--\n')
 
 f.close()
+
